@@ -1,26 +1,69 @@
 
- # SUPLA-CLOUD
- 
-Your home connected. www.supla.org
+# This is fork of SUPLA-CLOUD
 
-[![Latest release](https://img.shields.io/github/release/SUPLA/supla-cloud.svg)](https://github.com/SUPLA/supla-cloud/releases/latest)
+Supla-Cloud require Apache, PHP and MariaDB
+
+Installation on Debian 12
+=========================
+
+    curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+
+    git clone https://github.com/IoTAqua/supla-cloud.git
+    cd supla-cloud
 
 
-| `master`        |  `develop`           |
-| ------------- |-------------|
-| [![Build Status](https://ci.supla.org/api/badges/SUPLA/supla-cloud/status.svg)](https://ci.supla.org/SUPLA/supla-cloud/) | [![Build Status](https://ci.supla.org/api/badges/SUPLA/supla-cloud/status.svg?ref=refs/heads/develop)](https://ci.supla.org/SUPLA/supla-cloud/) |
+New/Drop DB:
 
-## Installation
+    sudo mariadb
+    * DROP DATABASE supla;
+    * CREATE DATABASE supla;
+    * CREATE USER 'supla'@'localhost' IDENTIFIED BY '<mariadb-supla-password>';
+    * GRANT ALL PRIVILEGES ON supla.* To 'supla'@'localhost';
+    * FLUSH PRIVILEGES;
 
-https://github.com/SUPLA/supla-docker
 
-## Development
+    vi app/config/parameters.yml
+    * set "database_password:" <mariadb-supla-password>
+    * set "mailer_from:" <admin@domain>
+    * set "supla_server:" <supla server address>
+    * set "recaptcha_site_key:" Site key from www.google.com/recaptcha
+    * set "recaptcha_secret:" Secret key from www.google.com/recaptcha
+    * set "secret:" Generated token
 
-Application is written with [Symfony](https://symfony.com/) and [Doctrine](http://www.doctrine-project.org/) on backend. 
-Frontend uses [Vue.js](https://vuejs.org/).
+    curl -sS https://getcomposer.org/installer | php
+    php composer.phar install --no-dev --optimize-autoloader
+    php composer.phar run-script webpack
 
-See [how to install the SUPLA Cloud for development](https://github.com/SUPLA/supla-cloud/blob/master/Development.md).
+New/Drop DB:
 
-## RestAPI
+    php bin/console doctrine:database:drop --force
+    php bin/console doctrine:database:create --env=prod
+    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+    php bin/console supla:initialize
 
-[Swagger](https://app.swaggerhub.com/apis/supla/supla-cloud-api/2.3.0)
+Update DB:
+
+    php bin/console doctrine:schema:update --force
+    php bin/console supla:initialize
+
+New/Drop/Update DB:
+
+    php bin/console cache:clear --env=prod --no-warmup
+
+    sudo cp -R ../supla-cloud /var/www/
+    sudo chown -R root:www-data /var/www/supla-cloud
+    sudo chown -R www-data:www-data /var/www/supla-cloud/var
+    sudo chmod 640 /var/www/supla-cloud/app/config/*
+
+Setup Apache
+============
+
+Config must have:
+
+    DocumentRoot /var/www/supla-cloud/web
+    Directory /var/www/supla-cloud/web>
+      AllowOverride All
+      Order Allow,Deny
+      Allow from All
+    </Directory>
