@@ -1,121 +1,69 @@
-# supla-cloud
 
-> Part of **SUPLA** — an open smart home platform that brings together hardware manufacturers, the community, and users.  
-> Learn more at https://www.supla.org
+# This is fork of SUPLA-CLOUD
 
-`supla-cloud` is the **Cloud web application and REST API** of the SUPLA platform.  
-It provides user-facing services such as configuration, automations, and integrations,
-and is used by official SUPLA services as well as self-hosted deployments.
+Supla-Cloud require Apache, PHP and MariaDB
 
----
+Installation on Debian 12
+=========================
 
-## What is SUPLA Cloud
+    curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+    sudo apt-get install -y nodejs
 
-This repository contains:
-- the Cloud backend application,
-- the REST API used by mobile apps, integrations, and partners,
-- the web-based user interface (frontend).
+    git clone https://github.com/IoTAqua/supla-cloud.git
+    cd supla-cloud
 
-It is a **core backend component** of the SUPLA ecosystem, but **not a complete SUPLA server stack on its own**.
 
-A full, production-ready SUPLA installation also requires server components
-responsible for device communication.
+New/Drop DB:
 
----
+    sudo mariadb
+    * DROP DATABASE supla;
+    * CREATE DATABASE supla;
+    * CREATE USER 'supla'@'localhost' IDENTIFIED BY '<mariadb-supla-password>';
+    * GRANT ALL PRIVILEGES ON supla.* To 'supla'@'localhost';
+    * FLUSH PRIVILEGES;
 
-## SUPLA architecture overview
 
-SUPLA consists of multiple components that together form a complete smart home platform,
-including device firmware, server-side services, cloud applications, and deployment tooling.
+    vi app/config/parameters.yml
+    * set "database_password:" <mariadb-supla-password>
+    * set "mailer_from:" <admin@domain>
+    * set "supla_server:" <supla server address>
+    * set "recaptcha_site_key:" Site key from www.google.com/recaptcha
+    * set "recaptcha_secret:" Secret key from www.google.com/recaptcha
+    * set "secret:" Generated token
 
-For a high-level overview of the SUPLA architecture and how individual repositories
-fit together, see the SUPLA organization repository:
+    curl -sS https://getcomposer.org/installer | php
+    php composer.phar install --no-dev --optimize-autoloader
+    php composer.phar run-script webpack
 
-👉 [github.com/SUPLA](https://github.com/SUPLA)
+New/Drop DB:
 
----
+    php bin/console doctrine:database:drop --force
+    php bin/console doctrine:database:create --env=prod
+    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+    php bin/console supla:initialize
 
-## Self-hosting and production use
+Update DB:
 
-For running your own SUPLA instance (recommended way for self-hosting and production),
-use **SUPLA Docker**:
+    php bin/console doctrine:schema:update --force
+    php bin/console supla:initialize
 
-👉 [github.com/SUPLA/supla-docker](https://github.com/SUPLA/supla-docker)
+New/Drop/Update DB:
 
-`supla-docker` provides:
-- a complete set of SUPLA services,
-- Docker-based deployment,
-- upgrade paths and operational configuration.
+    php bin/console cache:clear --env=prod --no-warmup
 
-This repository is **not intended to be used directly for production deployments**.
+    sudo cp -R ../supla-cloud /var/www/
+    sudo chown -R root:www-data /var/www/supla-cloud
+    sudo chown -R www-data:www-data /var/www/supla-cloud/var
+    sudo chmod 640 /var/www/supla-cloud/app/config/*
 
----
+Setup Apache
+============
 
-## Development
+Config must have:
 
-This repository is intended for:
-- SUPLA core contributors,
-- backend and frontend developers,
-- contributors working on the REST API or Cloud behavior.
-
-For local development setup, see:
-
-- [`Development.md`](./Development.md)
-
----
-
-## REST API
-
-SUPLA Cloud exposes a public REST API used by:
-- mobile applications,
-- third-party integrations,
-- partner solutions.
-
-API documentation is available via Swagger:
-
-- [API documentation](https://svr1.supla.org/api-docs/docs.html)
-
-Changes to public API endpoints must remain backward compatible whenever possible.
-
----
-
-## Technology stack
-
-- Backend: **Symfony**, **Doctrine**
-- Frontend: **Vue.js**
-- Deployment (production): **Docker** (via [`supla-docker`](https://github.com/SUPLA/supla-docker))
-
----
-
-## Contributing
-
-Contributions are welcome.
-
-Please read:
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md) – contribution rules and workflow
-- [`SECURITY.md`](./SECURITY.md) – how to report security issues
-
----
-
-## Releases
-
-SUPLA Cloud releases are tagged using CalVer versioning variant: 0Y.0M[.MICRO] (see [calver.org](https://calver.org/)).
-
-Versioned releases and release notes are available on GitHub:
-
-- [SUPLA Cloud releases](https://github.com/SUPLA/supla-cloud/releases)
-
----
-
-## About SUPLA
-
-For an overview of the SUPLA platform and ecosystem, see:
-- [github.com/SUPLA](https://github.com/SUPLA)
-- [www.supla.org](https://www.supla.org)
-
----
-
-## License
-
-This project is licensed under the **GPL-2.0** license.
-
+    DocumentRoot /var/www/supla-cloud/web
+    Directory /var/www/supla-cloud/web>
+      AllowOverride All
+      Order Allow,Deny
+      Allow from All
+    </Directory>

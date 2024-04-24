@@ -1,0 +1,31 @@
+parameters:
+  database_host: 127.0.0.1
+  database_port: ~
+  database_name: supla
+  database_user: supla
+  database_password: ~
+
+  mailer_transport: sendmail
+  mailer_host: ~
+  mailer_user: ~
+  mailer_password: ~
+  mailer_port: ~
+  mailer_encryption: ~
+  mailer_from: ~
+  admin_email: ~
+
+  supla_server: ~
+  supla_require_regulations_acceptance: false
+  supla_require_cookie_policy_acceptance: false
+  brute_force_auth_prevention_enabled: true
+
+  recaptcha_enabled: false
+  recaptcha_site_key: ~
+  recaptcha_secret: ~
+
+  locale: en
+
+  # A secret key that's used to generate certain security-related tokens
+  secret: ThisTokenIsNotSoSecretChangeIt
+
+  cors_allow_origin_regex: []
